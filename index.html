@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlucoScent - Lắng Nghe Cơ Thể Từ Bên Trong</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    screens: {
+                        'xs': '475px',
+                        'ipad': '850px',
+                    },
+                    colors: {
+                        ocean: {
+                            900: '#020c1b',
+                            800: '#0a192f',
+                            700: '#112240',
+                            600: '#233554',
+                            500: '#33C1FF', // Light Ocean Blue
+                            400: '#8892b0',
+                            300: '#ccd6f6',
+                            100: '#e6f1ff',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-delayed': 'float 6s ease-in-out 3s infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #020c1b;
+            color: #8892b0;
+            overflow-x: hidden;
+        }
+
+        .ocean-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: radial-gradient(circle at 50% -20%, rgba(51, 193, 255, 0.15), rgba(2, 12, 27, 0) 70%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Bubbles Animation */
+        .bubbles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: rise 15s infinite ease-in;
+            border: 1px solid rgba(51, 193, 255, 0.2);
+        }
+        .bubble:nth-child(1) { left: 10%; width: 20px; height: 20px; animation-duration: 12s; animation-delay: 0s; }
+        .bubble:nth-child(2) { left: 20%; width: 50px; height: 50px; animation-duration: 18s; animation-delay: 2s; }
+        .bubble:nth-child(3) { left: 35%; width: 15px; height: 15px; animation-duration: 15s; animation-delay: 4s; }
+        .bubble:nth-child(4) { left: 50%; width: 35px; height: 35px; animation-duration: 20s; animation-delay: 0s; }
+        .bubble:nth-child(5) { left: 65%; width: 25px; height: 25px; animation-duration: 14s; animation-delay: 1s; }
+        .bubble:nth-child(6) { left: 80%; width: 45px; height: 45px; animation-duration: 19s; animation-delay: 3s; }
+
+        @keyframes rise {
+            0% { bottom: -100px; transform: translateX(0); opacity: 0; }
+            50% { opacity: 0.6; }
+            100% { bottom: 120%; transform: translateX(-50px); opacity: 0; }
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- 3D PILL STRUCTURE STYLES (ADJUSTED ROTATION) --- */
+        
+        .scene-3d {
+            perspective: 1000px;
+            height: 450px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            width: 100%;
+            margin-bottom: 0px;
+        }
+
+        .pill-container {
+            position: relative;
+            width: 300px;
+            height: 120px;
+            transform-style: preserve-3d;
+            transition: transform 1s ease-in-out;
+            /* GIẢM ĐỘ NGHIÊNG: Chỉ còn 5 độ để nhìn thẳng hơn */
+            transform: rotateX(5deg) rotateY(-5deg) scale(1.3);
+        }
+        
+        /* Mobile Specific Adjustment */
+        @media (max-width: 600px) {
+            .scene-3d {
+                height: 350px;
+            }
+            .pill-container {
+                /* Đồng bộ độ nghiêng thấp trên mobile */
+                transform: rotateX(5deg) rotateY(-5deg) scale(0.9);
+            }
+        }
+
+        .layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(51, 193, 255, 0.3);
+        }
+
+        .layer-1 {
+            background: rgba(51, 193, 255, 0.15);
+            backdrop-filter: blur(5px);
+            z-index: 3;
+            transform: translateZ(0);
+        }
+        .layer-2 {
+            background: linear-gradient(135deg, #112240, #233554);
+            z-index: 2;
+            width: 90%;
+            height: 90%;
+            left: 5%;
+            top: 5%;
+            transform: translateZ(-20px);
+            opacity: 0.8;
+        }
+        .layer-3 {
+            background: radial-gradient(circle, #7e22ce, #3b0764);
+            z-index: 1;
+            width: 80%;
+            height: 80%;
+            left: 10%;
+            top: 10%;
+            transform: translateZ(-40px);
+            opacity: 0.6;
+        }
+
+        .pill-container.exploded .layer-1 { transform: translateZ(80px) translateY(-50px); }
+        .pill-container.exploded .layer-2 { transform: translateZ(0) translateY(0); opacity: 1; }
+        .pill-container.exploded .layer-3 { transform: translateZ(-80px) translateY(50px); opacity: 1; }
+
+        /* --- ANNOTATIONS --- */
+        .annotation {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.5s;
+            color: #33C1FF;
+            font-size: 0.8rem;
+            width: 140px;
+            pointer-events: none;
+            text-align: left;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            background: rgba(2, 12, 27, 0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .pill-container.exploded .annotation { opacity: 1; }
+        
+        /* Adjusted Positions */
+        .note-1 { 
+            top: -95px; 
+            left: 50%; 
+            border-left: 2px solid #33C1FF; 
+            padding-left: 10px; 
+            transform: translateX(80px); 
+        }
+        .note-2 { 
+            top: 30px; 
+            right: -160px; 
+            border-left: 2px solid #33C1FF; 
+            padding-left: 10px; 
+        }
+        .note-3 { 
+            bottom: -85px; /* Đã chỉnh: Rút ngắn khoảng cách từ -115px xuống -85px để cân đối với lớp 1 */
+            left: 50%; 
+            border-left: 2px solid #33C1FF; 
+            padding-left: 10px; 
+            transform: translateX(80px); 
+        }
+        
+        @media (max-width: 600px) {
+            .note-2 { right: -150px; width: 130px; }
+            .note-1, .note-3 { transform: translateX(50px); width: 130px; }
+        }
+
+        .glass-card {
+            background: rgba(17, 34, 64, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(51, 193, 255, 0.1);
+            border-radius: 12px;
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #e6f1ff, #33C1FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <div class="ocean-glow"></div>
+    <div class="bubbles">
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+        <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    </div>
+
+    <nav class="fixed w-full z-50 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#" class="text-2xl font-bold text-ocean-100 tracking-wider">GLUCO<span class="text-ocean-500">SCENT</span></a>
+            <div class="hidden md:flex space-x-8 text-sm font-medium text-ocean-300">
+                <a href="#insight" class="hover:text-ocean-500 transition-colors">Vấn Đề</a>
+                <a href="#structure" class="hover:text-ocean-500 transition-colors">Công Nghệ</a>
+                <a href="#usage" class="hover:text-ocean-500 transition-colors">Sử Dụng</a>
+                <a href="#team" class="hover:text-ocean-500 transition-colors">Đội Ngũ</a>
+            </div>
+            <a href="#contact" class="px-5 py-2 border border-ocean-500 text-ocean-500 rounded hover:bg-ocean-500/10 transition-all text-sm">Liên Hệ</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center relative pt-20" id="hero">
+        <div class="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+            <div class="z-10 reveal active">
+                <p class="text-ocean-500 font-mono mb-4 tracking-widest text-sm">THEO DÕI SỨC KHỎE THỤ ĐỘNG</p>
+                <h1 class="text-5xl md:text-7xl font-bold text-ocean-100 leading-tight mb-6">
+                    Phát hiện sớm từ tín hiệu<br>
+                    <span class="text-gradient">thầm lặng</span>
+                </h1>
+                <p class="text-ocean-400 text-lg mb-8 max-w-lg leading-relaxed">
+                    Mỗi lần xả nước là một lần lắng nghe cơ thể. Giải pháp sàng lọc tiểu đường không xâm lấn, hoạt động âm thầm ngay trong gia đình bạn.
+                </p>
+                <div class="flex gap-4">
+                    <a href="#structure" class="px-8 py-4 bg-ocean-500 text-ocean-900 font-bold rounded shadow-[0_0_20px_rgba(51,193,255,0.4)] hover:shadow-[0_0_30px_rgba(51,193,255,0.6)] hover:translate-y-[-2px] transition-all">
+                        Khám phá cấu tạo
+                    </a>
+                    <a href="#usage" class="px-8 py-4 border border-ocean-300 text-ocean-300 font-bold rounded hover:border-ocean-500 hover:text-ocean-500 transition-all">
+                        Cách hoạt động
+                    </a>
+                </div>
+            </div>
+
+            <div class="relative h-[500px] flex items-center justify-center animate-float">
+                <div class="relative w-64 h-64 md:w-80 md:h-80">
+                    <div class="absolute inset-0 bg-ocean-500 rounded-full blur-[100px] opacity-20 animate-pulse-slow"></div>
+                    <div class="relative z-10 w-full h-full border border-ocean-500/30 rounded-full flex items-center justify-center bg-ocean-800/20 backdrop-blur-sm shadow-2xl overflow-hidden group cursor-pointer hover:border-ocean-500/60 transition-colors">
+                        <div class="w-32 h-16 rounded-full bg-gradient-to-r from-ocean-600 to-ocean-500 shadow-[0_0_30px_rgba(51,193,255,0.3)] transform rotate-[-45deg] group-hover:rotate-0 transition-transform duration-700"></div>
+                         <div class="absolute inset-0 flex items-center justify-center">
+                             <div class="w-1 h-1 bg-white rounded-full absolute top-1/4 left-1/4 animate-ping"></div>
+                             <div class="w-1 h-1 bg-white rounded-full absolute bottom-1/3 right-1/4 animate-ping" style="animation-delay: 1s;"></div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Insight Section -->
+    <section class="py-24 bg-ocean-900 relative" id="insight">
+        <div class="max-w-4xl mx-auto px-6 text-center reveal">
+            <h2 class="text-3xl md:text-4xl font-sans font-medium text-ocean-100 mb-8 tracking-wide">"Sức khỏe không mất đi đột ngột, <br>nó rò rỉ từng ngày."</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8 mt-16 text-left">
+                <div class="glass-card p-8 hover:bg-ocean-800/50 transition-colors">
+                    <div class="text-ocean-500 text-4xl mb-4"><i class="fa-solid fa-person-running"></i></div>
+                    <h3 class="text-xl font-bold text-ocean-100 mb-2">Tâm lý chủ quan</h3>
+                    <p class="text-ocean-400">Người trẻ thường nghĩ mình khỏe, trì hoãn kiểm tra sức khỏe định kỳ vì bận rộn.</p>
+                </div>
+                <div class="glass-card p-8 hover:bg-ocean-800/50 transition-colors">
+                    <div class="text-ocean-500 text-4xl mb-4"><i class="fa-solid fa-user-nurse"></i></div>
+                    <h3 class="text-xl font-bold text-ocean-100 mb-2">Nỗi sợ y tế</h3>
+                    <p class="text-ocean-400">Người lớn tuổi thường ngại đi viện, sợ kim tiêm và các thủ tục xét nghiệm máu phức tạp.</p>
+                </div>
+            </div>
+
+            <div class="mt-16 p-6 border-t border-b border-ocean-500/20 inline-block">
+                <p class="text-xl text-ocean-300">
+                    GlucoScent <span class="text-ocean-500 font-bold">không yêu cầu</span> bạn thay đổi thói quen.<br>
+                    Chúng tôi chỉ lắng nghe cơ thể thay bạn.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Structure Section -->
+    <section class="py-24 relative overflow-hidden" id="structure">
+        <div class="absolute inset-0 bg-ocean-800/30 skew-y-3 transform origin-top-left -z-10 h-full"></div>
+        
+        <!-- Main Column Layout -->
+        <div class="max-w-5xl mx-auto px-6 flex flex-col items-center gap-6">
+            
+            <!-- 1. 3D Model: Bigger Scale -->
+            <div class="scene-3d reveal" id="sceneContainer">
+                <div class="pill-container" id="pillModel">
+                    <div class="layer layer-1">
+                        <span>VỎ BẢO VỆ</span>
+                        <div class="annotation note-1">
+                            <strong>Lớp 1: Polymer</strong><br>
+                            Chống nước & Clo
+                        </div>
+                    </div>
+                    <div class="layer layer-2">
+                        <span class="opacity-0">ENZYME</span>
+                        <div class="annotation note-2">
+                            <strong>Lớp 2: Enzyme</strong><br>
+                            Cảm biến Glucose
+                        </div>
+                    </div>
+                    <div class="layer layer-3">
+                        <span class="opacity-0">LÕI</span>
+                        <div class="annotation note-3">
+                            <strong>Lớp 3: Chỉ thị</strong><br>
+                            Đổi màu cảnh báo
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Button: Moved Up (Closer to model) -->
+            <button id="explodeBtn" class="reveal z-10 px-6 py-3 border border-ocean-500 text-ocean-500 text-sm font-bold uppercase tracking-wider hover:bg-ocean-500 hover:text-ocean-900 transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(51,193,255,0.2)]">
+                <i class="fa-solid fa-layer-group"></i> Tách lớp cấu tạo
+            </button>
+
+            <!-- 3. Text Info: Below Button -->
+            <div class="reveal w-full max-w-2xl mx-auto mt-6">
+                <div class="text-center mb-8">
+                    <h2 class="text-ocean-500 font-mono text-sm tracking-widest mb-2">CẤU TẠO SẢN PHẨM</h2>
+                    <h3 class="text-4xl font-bold text-ocean-100 mb-6">Công nghệ Enzyme <br>Bất động hóa</h3>
+                    <p class="text-ocean-400">
+                        Hệ thống 3 lớp thông minh giúp viên nén tồn tại trong môi trường nước khắc nghiệt (Clo, pH thay đổi) nhưng vẫn nhạy bén với Glucose.
+                    </p>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="flex group bg-ocean-800/30 p-4 rounded-lg border border-transparent hover:border-ocean-500/30 transition-all">
+                        <div class="w-12 h-12 rounded-full border border-ocean-500/30 flex items-center justify-center text-ocean-500 group-hover:bg-ocean-500 group-hover:text-ocean-900 transition-all shrink-0">1</div>
+                        <div class="ml-4">
+                            <h4 class="text-ocean-100 font-bold">Vỏ Polymer Tan Chậm</h4>
+                            <p class="text-sm text-ocean-400">Kiểm soát giải phóng hoạt chất, bền bỉ qua 1000 lần xả.</p>
+                        </div>
+                    </div>
+                    <div class="flex group bg-ocean-800/30 p-4 rounded-lg border border-transparent hover:border-ocean-500/30 transition-all">
+                        <div class="w-12 h-12 rounded-full border border-ocean-500/30 flex items-center justify-center text-ocean-500 group-hover:bg-ocean-500 group-hover:text-ocean-900 transition-all shrink-0">2</div>
+                        <div class="ml-4">
+                            <h4 class="text-ocean-100 font-bold">Nền Enzyme Glucose Oxidase</h4>
+                            <p class="text-sm text-ocean-400">Phát hiện đường ngay cả ở nồng độ thấp (5mg/dL).</p>
+                        </div>
+                    </div>
+                    <div class="flex group bg-ocean-800/30 p-4 rounded-lg border border-transparent hover:border-ocean-500/30 transition-all">
+                        <div class="w-12 h-12 rounded-full border border-ocean-500/30 flex items-center justify-center text-ocean-500 group-hover:bg-ocean-500 group-hover:text-ocean-900 transition-all shrink-0">3</div>
+                        <div class="ml-4">
+                            <h4 class="text-ocean-100 font-bold">Hệ Chỉ Thị Màu Sinh Học</h4>
+                            <p class="text-sm text-ocean-400">Phản ứng H2O2 tạo màu tím đặc trưng khi có bệnh lý.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Usage & Mechanism -->
+    <section class="py-24 bg-ocean-900" id="usage">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-3xl font-bold text-ocean-100 mb-4">Quy Trình Hoạt Động</h2>
+                <p class="text-ocean-400">Bạn không cần làm gì cả – chỉ cần quan sát.</p>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Step 1 -->
+                <div class="glass-card p-6 text-center reveal hover:-translate-y-2 transition-transform duration-300">
+                    <div class="h-16 w-16 mx-auto bg-ocean-800 rounded-full flex items-center justify-center text-ocean-500 text-2xl mb-6 shadow-lg shadow-ocean-500/20">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-ocean-100 mb-2">Bước 1</h3>
+                    <p class="text-sm text-ocean-400">Đặt viên nén vào lồng lưới bảo vệ đi kèm.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="glass-card p-6 text-center reveal hover:-translate-y-2 transition-transform duration-300" style="transition-delay: 100ms;">
+                    <div class="h-16 w-16 mx-auto bg-ocean-800 rounded-full flex items-center justify-center text-ocean-500 text-2xl mb-6 shadow-lg shadow-ocean-500/20">
+                        <i class="fa-solid fa-toilet"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-ocean-100 mb-2">Bước 2</h3>
+                    <p class="text-sm text-ocean-400">Treo vào bên trong két nước bồn cầu.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="glass-card p-6 text-center reveal hover:-translate-y-2 transition-transform duration-300" style="transition-delay: 200ms;">
+                    <div class="h-16 w-16 mx-auto bg-ocean-800 rounded-full flex items-center justify-center text-ocean-500 text-2xl mb-6 shadow-lg shadow-ocean-500/20">
+                        <i class="fa-solid fa-wave-square"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-ocean-100 mb-2">Bước 3</h3>
+                    <p class="text-sm text-ocean-400">Sử dụng bình thường. Enzyme sẽ hòa tan vào nước xả.</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="glass-card p-6 text-center reveal hover:-translate-y-2 transition-transform duration-300" style="transition-delay: 300ms;">
+                    <div class="h-16 w-16 mx-auto bg-ocean-800 rounded-full flex items-center justify-center text-ocean-500 text-2xl mb-6 shadow-lg shadow-ocean-500/20">
+                        <i class="fa-solid fa-eye"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-ocean-100 mb-2">Bước 4</h3>
+                    <p class="text-sm text-ocean-400">Quan sát màu nước. <br><span class="text-purple-400 font-bold">Màu tím = Cảnh báo.</span></p>
+                </div>
+            </div>
+
+            <!-- Color Scale -->
+            <div class="mt-20 glass-card p-8 reveal">
+                <h3 class="text-center text-xl font-bold text-ocean-100 mb-8">Thang Màu Cảnh Báo</h3>
+                <div class="flex flex-col md:flex-row h-24 rounded-lg overflow-hidden">
+                    <div class="flex-1 bg-blue-50/10 flex flex-col items-center justify-center text-xs font-bold text-white/50 relative group">
+                        <span class="z-10 mb-1">TRONG SUỐT</span>
+                        <span class="z-10 text-[10px] opacity-70">&lt; 5 mg/dL</span>
+                        <div class="absolute bottom-1 opacity-0 group-hover:opacity-100 transition-opacity text-ocean-500">Bình thường</div>
+                    </div>
+                    <div class="flex-1 bg-purple-300/30 flex flex-col items-center justify-center text-xs font-bold text-white relative group">
+                        <span class="z-10 mb-1">TÍM NHẠT</span>
+                        <span class="z-10 text-[10px] opacity-70">5 - 15 mg/dL</span>
+                        <div class="absolute bottom-1 opacity-0 group-hover:opacity-100 transition-opacity text-yellow-400">Cảnh báo nhẹ</div>
+                    </div>
+                    <div class="flex-1 bg-purple-600/60 flex flex-col items-center justify-center text-xs font-bold text-white relative group">
+                        <span class="z-10 mb-1">TÍM VỪA</span>
+                        <span class="z-10 text-[10px] opacity-70">15 - 25 mg/dL</span>
+                        <div class="absolute bottom-1 opacity-0 group-hover:opacity-100 transition-opacity text-orange-400">Nguy cơ cao</div>
+                    </div>
+                    <div class="flex-1 bg-purple-900 flex flex-col items-center justify-center text-xs font-bold text-white relative group">
+                        <span class="z-10 mb-1">TÍM ĐẬM</span>
+                        <span class="z-10 text-[10px] opacity-70">&gt; 25 mg/dL</span>
+                        <div class="absolute bottom-1 opacity-0 group-hover:opacity-100 transition-opacity text-red-500">NGUY HIỂM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="py-24" id="comparison">
+        <div class="max-w-5xl mx-auto px-6 reveal">
+            <h2 class="text-3xl font-bold text-ocean-100 text-center mb-12">Tại Sao Chọn GlucoScent?</h2>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-ocean-500/30 text-ocean-500 text-sm uppercase tracking-wider">
+                            <th class="py-4 px-6">Tiêu Chí</th>
+                            <th class="py-4 px-6 bg-ocean-800/50 rounded-t-lg text-ocean-100 font-bold border-t-2 border-ocean-500">GlucoScent</th>
+                            <th class="py-4 px-6 opacity-50">Que thử</th>
+                            <th class="py-4 px-6 opacity-50">Máy đo đường huyết</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-ocean-300">
+                        <tr class="border-b border-ocean-800 hover:bg-ocean-800/30 transition-colors">
+                            <td class="py-4 px-6 font-medium">Độ xâm lấn</td>
+                            <td class="py-4 px-6 bg-ocean-800/30 font-bold text-ocean-500">Không</td>
+                            <td class="py-4 px-6">Thấp</td>
+                            <td class="py-4 px-6">Cao (Lấy máu)</td>
+                        </tr>
+                        <tr class="border-b border-ocean-800 hover:bg-ocean-800/30 transition-colors">
+                            <td class="py-4 px-6 font-medium">Thao tác</td>
+                            <td class="py-4 px-6 bg-ocean-800/30 font-bold text-ocean-500">Hoàn toàn thụ động</td>
+                            <td class="py-4 px-6">Chủ động nhúng</td>
+                            <td class="py-4 px-6">Phức tạp</td>
+                        </tr>
+                        <tr class="border-b border-ocean-800 hover:bg-ocean-800/30 transition-colors">
+                            <td class="py-4 px-6 font-medium">Tâm lý người dùng</td>
+                            <td class="py-4 px-6 bg-ocean-800/30 font-bold text-ocean-500">Thoải mái, riêng tư</td>
+                            <td class="py-4 px-6">Ngại bẩn</td>
+                            <td class="py-4 px-6">Sợ đau</td>
+                        </tr>
+                        <tr class="hover:bg-ocean-800/30 transition-colors">
+                            <td class="py-4 px-6 font-medium">Chi phí / lần</td>
+                            <td class="py-4 px-6 bg-ocean-800/30 font-bold text-ocean-500">~50-100 VNĐ</td>
+                            <td class="py-4 px-6">~5.000 VNĐ</td>
+                            <td class="py-4 px-6">~15.000 VNĐ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team & Footer -->
+    <footer class="bg-ocean-900 border-t border-ocean-800 pt-20 pb-10" id="team">
+        <div class="max-w-7xl mx-auto px-6">
+            
+            <div class="grid md:grid-cols-2 gap-12 mb-20 reveal">
+                <div>
+                    <h2 class="text-ocean-500 font-mono text-sm tracking-widest mb-6">ĐỘI NGŨ PHÁT TRIỂN</h2>
+                    <h3 class="text-3xl font-bold text-ocean-100 mb-8">Dự án SV_STARTUP</h3>
+                    <p class="text-ocean-400 max-w-md">
+                        Chúng tôi là nhóm sinh viên trẻ với khát vọng ứng dụng công nghệ sinh học vào đời sống hàng ngày, biến việc chăm sóc sức khỏe trở nên đơn giản và dễ tiếp cận hơn.
+                    </p>
+                </div>
+                <div class="flex gap-8">
+                    <div class="text-center">
+                        <div class="w-24 h-24 rounded-full bg-ocean-700 border-2 border-ocean-500 mx-auto mb-4 overflow-hidden">
+                            <img src="https://ui-avatars.com/api/?name=Hoang+Nguyen&background=112240&color=33C1FF" alt="Hoang" class="w-full h-full object-cover">
+                        </div>
+                        <h4 class="text-ocean-100 font-bold">Nguyễn Trần Hoàng</h4>
+                        <p class="text-xs text-ocean-400 mt-1">Trưởng Nhóm</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-24 h-24 rounded-full bg-ocean-700 border-2 border-ocean-500 mx-auto mb-4 overflow-hidden">
+                            <img src="https://ui-avatars.com/api/?name=Minh+Hoang&background=112240&color=33C1FF" alt="Minh" class="w-full h-full object-cover">
+                        </div>
+                        <h4 class="text-ocean-100 font-bold">Lê Minh Hoàng</h4>
+                        <p class="text-xs text-ocean-400 mt-1">Đồng Sáng Lập</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-ocean-800 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-ocean-400">
+                <div class="mb-4 md:mb-0">
+                    &copy; 2026 GlucoScent. All rights reserved.
+                </div>
+                <div class="italic">
+                    "Những tín hiệu quan trọng nhất... thường rất im lặng."
+                </div>
+                <div class="flex gap-6 mt-4 md:mt-0">
+                    <a href="#" class="hover:text-ocean-500"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="#" class="hover:text-ocean-500"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="#" class="hover:text-ocean-500"><i class="fa-solid fa-envelope"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 1. Scroll Reveal Logic
+        const revealElements = document.querySelectorAll('.reveal');
+
+        const revealOnScroll = () => {
+            const windowHeight = window.innerHeight;
+            const elementVisible = 150;
+
+            revealElements.forEach((reveal) => {
+                const elementTop = reveal.getBoundingClientRect().top;
+                if (elementTop < windowHeight - elementVisible) {
+                    reveal.classList.add('active');
+                }
+            });
+        };
+
+        window.addEventListener('scroll', revealOnScroll);
+        revealOnScroll(); // Trigger once on load
+
+        // 2. Navbar Background Transition
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-ocean-900/90', 'backdrop-blur-md', 'shadow-lg');
+            } else {
+                navbar.classList.remove('bg-ocean-900/90', 'backdrop-blur-md', 'shadow-lg');
+            }
+        });
+
+        // 3. Exploded View Logic
+        const explodeBtn = document.getElementById('explodeBtn');
+        const pillModel = document.getElementById('pillModel');
+        const btnIcon = explodeBtn.querySelector('i');
+
+        let isExploded = false;
+
+        explodeBtn.addEventListener('click', () => {
+            isExploded = !isExploded;
+            if (isExploded) {
+                pillModel.classList.add('exploded');
+                explodeBtn.innerHTML = '<i class="fa-solid fa-compress"></i> Thu gọn mô hình';
+            } else {
+                pillModel.classList.remove('exploded');
+                explodeBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i> Tách lớp cấu tạo';
+            }
+        });
+
+        // 4. Parallax effect for bubbles (Subtle)
+        window.addEventListener('mousemove', (e) => {
+            const bubbles = document.querySelectorAll('.bubble');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+
+            bubbles.forEach((bubble, index) => {
+                const speed = (index + 1) * 2;
+                bubble.style.transform = `translate(${x * speed}px, ${y * speed}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+
+
